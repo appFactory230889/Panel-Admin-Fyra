@@ -123,8 +123,11 @@
       <label>Autor(a)</label>
       <input type="text" id="autor">
 
-      <label>URL de portada</label>
+      <label>URL de portada (para el grid — proporción vertical 2:3)</label>
       <input type="text" id="portadaUrl" placeholder="https://picsum.photos/400/600?random=6">
+
+      <label>URL de portada ancha (para la pantalla de detalle — proporción casi cuadrada)</label>
+      <input type="text" id="portadaAnchaUrl" placeholder="https://...">
 
       <label>Sinopsis (español)</label>
       <textarea id="sinopsis"></textarea>
@@ -363,6 +366,7 @@
     const tituloEnIngles = document.getElementById('tituloEnIngles').value.trim();
     const autor = document.getElementById('autor').value.trim();
     const portadaUrl = document.getElementById('portadaUrl').value.trim();
+    const portadaAnchaUrl = document.getElementById('portadaAnchaUrl').value.trim();
     const sinopsis = document.getElementById('sinopsis').value.trim();
     const sinopsisEnIngles = document.getElementById('sinopsisEnIngles').value.trim();
     const rating = parseFloat(document.getElementById('rating').value);
@@ -403,7 +407,7 @@
     }
 
     const novelaData = {
-      titulo, tituloEnIngles, autor, portadaUrl, sinopsis, sinopsisEnIngles, generos, rating,
+      titulo, tituloEnIngles, autor, portadaUrl, portadaAnchaUrl, sinopsis, sinopsisEnIngles, generos, rating,
       lecturas: 0, destacada,
       fechaPublicacion: Date.now(),
       capitulos
