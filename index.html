@@ -315,9 +315,9 @@
     document.querySelectorAll('#listaCapitulosExtra .capitulo').forEach(el => {
       const numero = el.querySelector('.capExtra-numero').value.trim();
       const titulo = el.querySelector('.capExtra-titulo').value.trim();
-      const contenido = el.querySelector('.capExtra-contenido').value.trim();
+      const contenido = normalizarSaltos(el.querySelector('.capExtra-contenido').value.trim());
       const tituloEn = el.querySelector('.capExtra-titulo-en').value.trim();
-      const contenidoEn = el.querySelector('.capExtra-contenido-en').value.trim();
+      const contenidoEn = normalizarSaltos(el.querySelector('.capExtra-contenido-en').value.trim());
       if (!numero || !titulo || !contenido) return;
       nuevosCapitulos['cap' + numero] = {
         numero: parseInt(numero),
@@ -348,6 +348,13 @@
       });
   }
 
+  function normalizarSaltos(texto) {
+    // Convierte los caracteres literales \n (backslash + n) en saltos de línea reales,
+    // útil cuando se pega contenido copiado directo de un archivo JSON.
+    return texto.replace(/\\n/g, '\n');
+  }
+
+  function guardarNovela() {
     const msg = document.getElementById('mensajePanel');
     msg.style.display = 'none';
 
@@ -376,9 +383,9 @@
     document.querySelectorAll('#listaCapitulos .capitulo').forEach(el => {
       numero++;
       const tituloCap = el.querySelector('.cap-titulo').value.trim();
-      const contenidoCap = el.querySelector('.cap-contenido').value.trim();
+      const contenidoCap = normalizarSaltos(el.querySelector('.cap-contenido').value.trim());
       const tituloCapEn = el.querySelector('.cap-titulo-en').value.trim();
-      const contenidoCapEn = el.querySelector('.cap-contenido-en').value.trim();
+      const contenidoCapEn = normalizarSaltos(el.querySelector('.cap-contenido-en').value.trim());
       if (!tituloCap || !contenidoCap) { capitulosValidos = false; return; }
       capitulos['cap' + numero] = {
         numero: numero,
