@@ -164,6 +164,21 @@
     </div>
 
     <button class="btn btn-principal" onclick="guardarNovela()">Guardar novela en Firebase</button>
+
+    <div class="tarjeta" style="margin-top:32px; border-color: var(--pink);">
+      <h1 style="font-size:18px;">Agregar capítulos a una novela existente</h1>
+      <p class="subtitulo">Esto NO borra los capítulos que ya existen — solo agrega los nuevos.</p>
+
+      <label>ID de la novela existente (ej. novela5)</label>
+      <input type="text" id="novelaIdExistente" placeholder="novela5">
+
+      <label>Capítulos nuevos</label>
+      <div id="listaCapitulosExtra"></div>
+      <button class="btn btn-secundario" onclick="agregarCapituloExtra()" style="margin-top:12px;">+ Agregar capítulo</button>
+
+      <br><br>
+      <button class="btn btn-principal" onclick="agregarCapitulosAExistente()">Agregar estos capítulos a la novela</button>
+    </div>
   </div>
 
 </div>
@@ -189,6 +204,7 @@
 
   let generosSeleccionados = new Set();
   let contadorCapitulos = 0;
+  let contadorCapitulosExtra = 0;
 
   auth.onAuthStateChanged(user => {
     if (user) {
@@ -261,7 +277,77 @@
     document.getElementById('listaCapitulos').appendChild(div);
   }
 
-  function guardarNovela() {
+  function agregarCapituloExtra() {
+    contadorCapitulosExtra++;
+    const id = 'capExtra_' + contadorCapitulosExtra;
+    const div = document.createElement('div');
+    div.className = 'capitulo';
+    div.id = id;
+    div.innerHTML = `
+      <button class="btn-quitar" onclick="document.getElementById('${id}').remove()">Quitar</button>
+      <label>Número de capítulo (ej. 16 — debe ser el siguiente disponible)</label>
+      <input type="text" class="capExtra-numero">
+      <label>Título del capítulo (español)</label>
+      <input type="text" class="capExtra-titulo">
+      <label>Contenido (español)</label>
+      <textarea class="capExtra-contenido"></textarea>
+      <label>Título del capítulo (inglés)</label>
+      <input type="text" class="capExtra-titulo-en">
+      <label>Contenido (inglés)</label>
+      <textarea class="capExtra-contenido-en"></textarea>
+    `;
+    document.getElementById('listaCapitulosExtra').appendChild(div);
+  }
+
+  function agregarCapitulosAExistente() {
+    const msg = document.getElementById('mensajePanel');
+    msg.style.display = 'none';
+
+    const novelaIdExistente = document.getElementById('novelaIdExistente').value.trim();
+    if (!novelaIdExistente) {
+      msg.className = 'mensaje error';
+      msg.textContent = 'Escribe el ID de la novela existente.';
+      return;
+    }
+
+    const nuevosCapitulos = {};
+    let algunoValido = false;
+    document.querySelectorAll('#listaCapitulosExtra .capitulo').forEach(el => {
+      const numero = el.querySelector('.capExtra-numero').value.trim();
+      const titulo = el.querySelector('.capExtra-titulo').value.trim();
+      const contenido = el.querySelector('.capExtra-contenido').value.trim();
+      const tituloEn = el.querySelector('.capExtra-titulo-en').value.trim();
+      const contenidoEn = el.querySelector('.capExtra-contenido-en').value.trim();
+      if (!numero || !titulo || !contenido) return;
+      nuevosCapitulos['cap' + numero] = {
+        numero: parseInt(numero),
+        titulo, contenido,
+        tituloEnIngles: tituloEn,
+        contenidoEnIngles: contenidoEn
+      };
+      algunoValido = true;
+    });
+
+    if (!algunoValido) {
+      msg.className = 'mensaje error';
+      msg.textContent = 'Agrega al menos un capítulo con número, título y contenido.';
+      return;
+    }
+
+    // CLAVE: usamos update(), no set() — esto FUSIONA los capítulos nuevos
+    // con los que ya existen, sin borrar ninguno de los anteriores.
+    db.ref('novelas/' + novelaIdExistente + '/capitulos').update(nuevosCapitulos)
+      .then(() => {
+        msg.className = 'mensaje ok';
+        msg.textContent = '✅ Capítulos agregados a ' + novelaIdExistente + ' sin afectar los existentes.';
+        window.scrollTo(0, document.body.scrollHeight);
+      })
+      .catch(err => {
+        msg.className = 'mensaje error';
+        msg.textContent = 'Error al agregar capítulos: ' + err.message;
+      });
+  }
+
     const msg = document.getElementById('mensajePanel');
     msg.style.display = 'none';
 
