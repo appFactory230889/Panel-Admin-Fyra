@@ -114,8 +114,11 @@
       <label>ID de la novela (ej. novela6 — debe ser único, minúsculas, sin espacios)</label>
       <input type="text" id="novelaId" placeholder="novela6">
 
-      <label>Título</label>
+      <label>Título (español)</label>
       <input type="text" id="titulo">
+
+      <label>Título (inglés)</label>
+      <input type="text" id="tituloEnIngles">
 
       <label>Autor(a)</label>
       <input type="text" id="autor">
@@ -123,8 +126,11 @@
       <label>URL de portada</label>
       <input type="text" id="portadaUrl" placeholder="https://picsum.photos/400/600?random=6">
 
-      <label>Sinopsis</label>
+      <label>Sinopsis (español)</label>
       <textarea id="sinopsis"></textarea>
+
+      <label>Sinopsis (inglés)</label>
+      <textarea id="sinopsisEnIngles"></textarea>
 
       <label>Géneros (toca para seleccionar)</label>
       <div class="chips" id="chipsGeneros">
@@ -168,13 +174,13 @@
   // (Configuración del proyecto → Tus apps → app web "Panel Admin Fyra")
   // =====================================================================
   const firebaseConfig = {
-    apiKey: "TU_API_KEY_AQUI",
+    apiKey: "AIzaSyBdBYrXp2GyJn8r48QV5yCTP4P5NcKQ72w",
     authDomain: "fyra-668f5.firebaseapp.com",
     databaseURL: "https://fyra-668f5-default-rtdb.firebaseio.com",
     projectId: "fyra-668f5",
-    storageBucket: "TU_STORAGE_BUCKET_AQUI",
-    messagingSenderId: "TU_SENDER_ID_AQUI",
-    appId: "TU_APP_ID_AQUI"
+    storageBucket: "fyra-668f5.firebasestorage.app",
+    messagingSenderId: "84764556848",
+    appId: "1:84764556848:web:433ca0f4beab4f88f5f7f5"
   };
 
   firebase.initializeApp(firebaseConfig);
@@ -243,10 +249,14 @@
     div.innerHTML = `
       <button class="btn-quitar" onclick="document.getElementById('${id}').remove()">Quitar</button>
       <span class="num">Capítulo ${contadorCapitulos}</span>
-      <label>Título del capítulo</label>
+      <label>Título del capítulo (español)</label>
       <input type="text" class="cap-titulo">
-      <label>Contenido</label>
+      <label>Contenido (español)</label>
       <textarea class="cap-contenido" placeholder="Separa los párrafos con una línea en blanco"></textarea>
+      <label>Título del capítulo (inglés)</label>
+      <input type="text" class="cap-titulo-en">
+      <label>Contenido (inglés)</label>
+      <textarea class="cap-contenido-en" placeholder="Separate paragraphs with a blank line"></textarea>
     `;
     document.getElementById('listaCapitulos').appendChild(div);
   }
@@ -257,9 +267,11 @@
 
     const novelaId = document.getElementById('novelaId').value.trim();
     const titulo = document.getElementById('titulo').value.trim();
+    const tituloEnIngles = document.getElementById('tituloEnIngles').value.trim();
     const autor = document.getElementById('autor').value.trim();
     const portadaUrl = document.getElementById('portadaUrl').value.trim();
     const sinopsis = document.getElementById('sinopsis').value.trim();
+    const sinopsisEnIngles = document.getElementById('sinopsisEnIngles').value.trim();
     const rating = parseFloat(document.getElementById('rating').value);
     const destacada = document.getElementById('chipDestacadaSi').classList.contains('activo');
 
@@ -279,11 +291,15 @@
       numero++;
       const tituloCap = el.querySelector('.cap-titulo').value.trim();
       const contenidoCap = el.querySelector('.cap-contenido').value.trim();
+      const tituloCapEn = el.querySelector('.cap-titulo-en').value.trim();
+      const contenidoCapEn = el.querySelector('.cap-contenido-en').value.trim();
       if (!tituloCap || !contenidoCap) { capitulosValidos = false; return; }
       capitulos['cap' + numero] = {
         numero: numero,
         titulo: tituloCap,
-        contenido: contenidoCap
+        contenido: contenidoCap,
+        tituloEnIngles: tituloCapEn,
+        contenidoEnIngles: contenidoCapEn
       };
     });
 
@@ -294,7 +310,7 @@
     }
 
     const novelaData = {
-      titulo, autor, portadaUrl, sinopsis, generos, rating,
+      titulo, tituloEnIngles, autor, portadaUrl, sinopsis, sinopsisEnIngles, generos, rating,
       lecturas: 0, destacada,
       fechaPublicacion: Date.now(),
       capitulos
