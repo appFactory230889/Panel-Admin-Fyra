@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fyra — Panel de Novelas</title>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<style>
+  :root {
+    --bg-dark: #1A0E23;
+    --bg-dark-light: #2A1735;
+    --pink: #E896B8;
+    --pink-light: #F5C6DA;
+    --gold: #F5E6C8;
+    --text-muted: #B8A9C4;
+    --error: #E85D5D;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-dark);
+    color: #fff;
+    min-height: 100vh;
+  }
+  .contenedor { max-width: 720px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { color: var(--gold); font-size: 22px; margin-bottom: 4px; }
+  .subtitulo { color: var(--text-muted); font-size: 14px; margin-bottom: 28px; }
+  .tarjeta {
+    background: var(--bg-dark-light);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 20px;
+    border: 1px solid #4D3A5A;
+  }
+  label { display: block; font-size: 13px; color: var(--text-muted); margin: 14px 0 6px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], input[type=password], input[type=number], textarea {
+    width: 100%;
+    background: var(--bg-dark);
+    border: 1px solid #4D3A5A;
+    border-radius: 8px;
+    color: #fff;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  textarea { min-height: 90px; resize: vertical; }
+  .fila { display: flex; gap: 12px; }
+  .fila > div { flex: 1; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .chip {
+    padding: 8px 16px; border-radius: 20px; background: var(--bg-dark);
+    border: 1px solid #4D3A5A; cursor: pointer; font-size: 13px; user-select: none;
+  }
+  .chip.activo { background: var(--pink); color: var(--bg-dark); font-weight: 600; border-color: var(--pink); }
+  .capitulo {
+    background: var(--bg-dark); border-radius: 10px; padding: 16px; margin-top: 12px;
+    border: 1px solid #3A2A48; position: relative;
+  }
+  .capitulo .num { color: var(--gold); font-weight: bold; font-size: 13px; }
+  .btn {
+    border: none; border-radius: 24px; padding: 13px 22px; font-size: 15px;
+    font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .btn-principal { background: linear-gradient(90deg, var(--pink), var(--gold)); color: var(--bg-dark); width: 100%; }
+  .btn-secundario { background: transparent; color: var(--pink-light); border: 1px solid var(--pink-light); }
+  .btn-quitar {
+    position: absolute; top: 10px; right: 10px; background: transparent;
+    border: none; color: var(--error); cursor: pointer; font-size: 13px;
+  }
+  .mensaje { padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; display: none; }
+  .mensaje.ok { background: #2D5A3D; color: #B8F5C8; display: block; }
+  .mensaje.error { background: #5A2D2D; color: #F5B8B8; display: block; }
+  #vistaLogin, #vistaPanel { display: none; }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .link-salir { color: var(--text-muted); font-size: 13px; cursor: pointer; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="contenedor">
+
+  <!-- LOGIN -->
+  <div id="vistaLogin">
+    <h1>Fyra — Panel de Novelas</h1>
+    <p class="subtitulo">Inicia sesión con tu cuenta de Fyra para continuar</p>
+    <div class="tarjeta">
+      <div id="mensajeLogin" class="mensaje"></div>
+      <label>Correo electrónico</label>
+      <input type="text" id="loginEmail" placeholder="tuemail@ejemplo.com">
+      <label>Contraseña</label>
+      <input type="password" id="loginPassword">
+      <br><br>
+      <button class="btn btn-principal" onclick="iniciarSesion()">Iniciar sesión</button>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <div id="vistaPanel">
+    <div class="top-bar">
+      <div>
+        <h1 style="margin-bottom:0;">Fyra — Nueva novela</h1>
+        <p class="subtitulo" style="margin-bottom:0;" id="usuarioActivo"></p>
+      </div>
+      <span class="link-salir" onclick="cerrarSesion()">Cerrar sesión</span>
+    </div>
+
+    <div id="mensajePanel" class="mensaje"></div>
+
+    <div class="tarjeta">
+      <label>ID de la novela (ej. novela6 — debe ser único, minúsculas, sin espacios)</label>
+      <input type="text" id="novelaId" placeholder="novela6">
+
+      <label>Título</label>
+      <input type="text" id="titulo">
+
+      <label>Autor(a)</label>
+      <input type="text" id="autor">
+
+      <label>URL de portada</label>
+      <input type="text" id="portadaUrl" placeholder="https://picsum.photos/400/600?random=6">
+
+      <label>Sinopsis</label>
+      <textarea id="sinopsis"></textarea>
+
+      <label>Géneros (toca para seleccionar)</label>
+      <div class="chips" id="chipsGeneros">
+        <div class="chip" data-genero="romance">Romance</div>
+        <div class="chip" data-genero="fantasia">Fantasía</div>
+        <div class="chip" data-genero="drama">Drama</div>
+        <div class="chip" data-genero="juvenil">Juvenil</div>
+      </div>
+
+      <div class="fila">
+        <div>
+          <label>Rating (ej. 4.7)</label>
+          <input type="number" id="rating" step="0.1" min="0" max="5" value="4.5">
+        </div>
+        <div>
+          <label>Destacada</label>
+          <div class="chips">
+            <div class="chip" id="chipDestacadaSi" data-valor="true">Sí</div>
+            <div class="chip activo" id="chipDestacadaNo" data-valor="false">No</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <label style="margin:0;">Capítulos</label>
+        <button class="btn btn-secundario" onclick="agregarCapitulo()">+ Agregar capítulo</button>
+      </div>
+      <div id="listaCapitulos"></div>
+    </div>
+
+    <button class="btn btn-principal" onclick="guardarNovela()">Guardar novela en Firebase</button>
+  </div>
+
+</div>
+
+<script>
+  // =====================================================================
+  // PEGA AQUÍ el objeto firebaseConfig que copiaste de Firebase Console
+  // (Configuración del proyecto → Tus apps → app web "Panel Admin Fyra")
+  // =====================================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyBdBYrXp2GyJn8r48QV5yCTP4P5NcKQ72w",
+  authDomain: "fyra-668f5.firebaseapp.com",
+  databaseURL: "https://fyra-668f5-default-rtdb.firebaseio.com",
+  projectId: "fyra-668f5",
+  storageBucket: "fyra-668f5.firebasestorage.app",
+  messagingSenderId: "84764556848",
+  appId: "1:84764556848:web:433ca0f4beab4f88f5f7f5"
+};
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  let generosSeleccionados = new Set();
+  let contadorCapitulos = 0;
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById('vistaLogin').style.display = 'none';
+      document.getElementById('vistaPanel').style.display = 'block';
+      document.getElementById('usuarioActivo').textContent = user.email;
+      if (contadorCapitulos === 0) agregarCapitulo();
+    } else {
+      document.getElementById('vistaLogin').style.display = 'block';
+      document.getElementById('vistaPanel').style.display = 'none';
+    }
+  });
+
+  function iniciarSesion() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const msg = document.getElementById('mensajeLogin');
+    msg.style.display = 'none';
+
+    auth.signInWithEmailAndPassword(email, password)
+      .catch(err => {
+        msg.className = 'mensaje error';
+        msg.textContent = 'No se pudo iniciar sesión: correo o contraseña incorrectos.';
+      });
+  }
+
+  function cerrarSesion() {
+    auth.signOut();
+  }
+
+  document.getElementById('chipsGeneros').addEventListener('click', e => {
+    if (!e.target.classList.contains('chip')) return;
+    const genero = e.target.dataset.genero;
+    if (generosSeleccionados.has(genero)) {
+      generosSeleccionados.delete(genero);
+      e.target.classList.remove('activo');
+    } else {
+      generosSeleccionados.add(genero);
+      e.target.classList.add('activo');
+    }
+  });
+
+  document.getElementById('chipDestacadaSi').addEventListener('click', () => {
+    document.getElementById('chipDestacadaSi').classList.add('activo');
+    document.getElementById('chipDestacadaNo').classList.remove('activo');
+  });
+  document.getElementById('chipDestacadaNo').addEventListener('click', () => {
+    document.getElementById('chipDestacadaNo').classList.add('activo');
+    document.getElementById('chipDestacadaSi').classList.remove('activo');
+  });
+
+  function agregarCapitulo() {
+    contadorCapitulos++;
+    const id = 'cap_' + contadorCapitulos;
+    const div = document.createElement('div');
+    div.className = 'capitulo';
+    div.id = id;
+    div.innerHTML = `
+      <button class="btn-quitar" onclick="document.getElementById('${id}').remove()">Quitar</button>
+      <span class="num">Capítulo ${contadorCapitulos}</span>
+      <label>Título del capítulo</label>
+      <input type="text" class="cap-titulo">
+      <label>Contenido</label>
+      <textarea class="cap-contenido" placeholder="Separa los párrafos con una línea en blanco"></textarea>
+    `;
+    document.getElementById('listaCapitulos').appendChild(div);
+  }
+
+  function guardarNovela() {
+    const msg = document.getElementById('mensajePanel');
+    msg.style.display = 'none';
+
+    const novelaId = document.getElementById('novelaId').value.trim();
+    const titulo = document.getElementById('titulo').value.trim();
+    const autor = document.getElementById('autor').value.trim();
+    const portadaUrl = document.getElementById('portadaUrl').value.trim();
+    const sinopsis = document.getElementById('sinopsis').value.trim();
+    const rating = parseFloat(document.getElementById('rating').value);
+    const destacada = document.getElementById('chipDestacadaSi').classList.contains('activo');
+
+    if (!novelaId || !titulo || !autor || generosSeleccionados.size === 0) {
+      msg.className = 'mensaje error';
+      msg.textContent = 'Completa al menos: ID, título, autor y al menos un género.';
+      return;
+    }
+
+    const generos = {};
+    generosSeleccionados.forEach(g => generos[g] = true);
+
+    const capitulos = {};
+    let numero = 0;
+    let capitulosValidos = true;
+    document.querySelectorAll('#listaCapitulos .capitulo').forEach(el => {
+      numero++;
+      const tituloCap = el.querySelector('.cap-titulo').value.trim();
+      const contenidoCap = el.querySelector('.cap-contenido').value.trim();
+      if (!tituloCap || !contenidoCap) { capitulosValidos = false; return; }
+      capitulos['cap' + numero] = {
+        numero: numero,
+        titulo: tituloCap,
+        contenido: contenidoCap
+      };
+    });
+
+    if (numero === 0 || !capitulosValidos) {
+      msg.className = 'mensaje error';
+      msg.textContent = 'Cada capítulo agregado necesita título y contenido.';
+      return;
+    }
+
+    const novelaData = {
+      titulo, autor, portadaUrl, sinopsis, generos, rating,
+      lecturas: 0, destacada,
+      fechaPublicacion: Date.now(),
+      capitulos
+    };
+
+    // Escritura DIRECTA en /novelas/{novelaId} — nunca toca la raíz
+    // ni ningún otro nodo (usuarios, otras novelas, etc.)
+    db.ref('novelas/' + novelaId).set(novelaData)
+      .then(() => {
+        msg.className = 'mensaje ok';
+        msg.textContent = '✅ Novela "' + titulo + '" guardada correctamente como ' + novelaId;
+        window.scrollTo(0, 0);
+      })
+      .catch(err => {
+        msg.className = 'mensaje error';
+        msg.textContent = 'Error al guardar: ' + err.message;
+      });
+  }
+</script>
+
+</body>
+</html>
