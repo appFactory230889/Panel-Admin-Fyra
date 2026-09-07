@@ -171,6 +171,7 @@
     <div class="tarjeta" style="margin-top:32px; border-color: var(--pink);">
       <h1 style="font-size:18px;">Agregar capítulos a una novela existente</h1>
       <p class="subtitulo">Esto NO borra los capítulos que ya existen — solo agrega los nuevos.</p>
+      <div id="mensajeCapitulosExtra" class="mensaje"></div>
 
       <label>ID de la novela existente (ej. novela5)</label>
       <input type="text" id="novelaIdExistente" placeholder="novela5">
@@ -303,7 +304,7 @@
   }
 
   function agregarCapitulosAExistente() {
-    const msg = document.getElementById('mensajePanel');
+    const msg = document.getElementById('mensajeCapitulosExtra');
     msg.style.display = 'none';
 
     const novelaIdExistente = document.getElementById('novelaIdExistente').value.trim();
@@ -343,9 +344,14 @@
       .then(() => {
         msg.className = 'mensaje ok';
         msg.textContent = '✅ Capítulos agregados a ' + novelaIdExistente + ' sin afectar los existentes.';
-        window.scrollTo(0, document.body.scrollHeight);
+
+        // Limpiar el formulario para seguir agregando capítulos nuevos
+        document.getElementById('novelaIdExistente').value = '';
+        document.getElementById('listaCapitulosExtra').innerHTML = '';
+        contadorCapitulosExtra = 0;
       })
       .catch(err => {
+        console.error('Error al agregar capítulos:', err);
         msg.className = 'mensaje error';
         msg.textContent = 'Error al agregar capítulos: ' + err.message;
       });
@@ -420,8 +426,27 @@
         msg.className = 'mensaje ok';
         msg.textContent = '✅ Novela "' + titulo + '" guardada correctamente como ' + novelaId;
         window.scrollTo(0, 0);
+
+        // Limpiar el formulario para seguir agregando novelas nuevas
+        document.getElementById('novelaId').value = '';
+        document.getElementById('titulo').value = '';
+        document.getElementById('tituloEnIngles').value = '';
+        document.getElementById('autor').value = '';
+        document.getElementById('portadaUrl').value = '';
+        document.getElementById('portadaAnchaUrl').value = '';
+        document.getElementById('sinopsis').value = '';
+        document.getElementById('sinopsisEnIngles').value = '';
+        document.getElementById('rating').value = '4.5';
+        document.querySelectorAll('#chipsGeneros .chip').forEach(c => c.classList.remove('activo'));
+        generosSeleccionados.clear();
+        document.getElementById('chipDestacadaSi').classList.remove('activo');
+        document.getElementById('chipDestacadaNo').classList.add('activo');
+        document.getElementById('listaCapitulos').innerHTML = '';
+        contadorCapitulos = 0;
+        agregarCapitulo();
       })
       .catch(err => {
+        console.error('Error al guardar novela:', err);
         msg.className = 'mensaje error';
         msg.textContent = 'Error al guardar: ' + err.message;
       });
